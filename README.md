@@ -134,6 +134,24 @@ terraform destroy -auto-approve
 
 ---
 
+## Usage as a Module
+
+Reference this repository as a Terraform module in your own configurations:
+
+```hcl
+module "eks_cluster" {
+  source = "github.com/marcuwynu23/terraform-aws-eks?ref=main"
+}
+```
+
+After deployment, configure kubectl access:
+
+```sh
+aws eks --region ap-southeast-1 update-kubeconfig --name demo-eks-cluster
+```
+
+---
+
 ## Kubernetes Provider
 
 Terraform automatically configures the Kubernetes provider using:
