@@ -1,0 +1,90 @@
+name: CD - AWS EKS (Destroy)
+
+on:
+  workflow_dispatch:
+    inputs:
+
+      vpc_cidr_block:
+        description: CIDR block for the VPC
+        required: true
+        type: string
+        default: 10.0.0.0/16
+
+      availability_zones:
+        description: 'Availability zones (HCL list format e.g. ["ap-southeast-1a","ap-southeast-1b"])'
+        required: true
+        type: string
+        default: '["ap-southeast-1a","ap-southeast-1b"]'
+
+      cluster_name:
+        description: Name of the EKS cluster
+        required: true
+        type: string
+        default: demo-eks-cluster
+
+      node_group_name:
+        description: Name of the EKS node group
+        required: true
+        type: string
+        default: demo-node-group
+
+      node_group_size:
+        description: Desired/min/max size of the node group
+        required: true
+        type: number
+        default: 3
+
+      instance_types:
+        description: 'Instance types (HCL list format e.g. ["t3.medium"])'
+        required: true
+        type: string
+        default: '["t3.medium"]'
+
+env:
+  TF_STATE_BUCKET: ${{ secrets.TF_STATE_BUCKET }}
+  TF_STATE_REGION: ${{ secrets.TF_STATE_REGION }}
+  TF_STATE_LOCK_TABLE: ${{ secrets.TF_STATE_LOCK_TABLE }}
+
+jobs:
+  destroy:
+    name: Terraform Destroy
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.TF_STATE_REGION }}
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: latest
+    - name: Terraform Init
+      run: |
+        terraform init \
+          -backend-config="bucket=$TF_STATE_BUCKET" \
+          -backend-config="key=eks/terraform.tfstate" \
+          -backend-config="region=$TF_STATE_REGION" \
+          -backend-config="dynamodb_table=$TF_STATE_LOCK_TABLE" \
+          -backend-config="encrypt=true"
+    - name: Terraform Plan
+      run: |
+        terraform plan -destroy \
+          -var="vpc_cidr_block=${{ github.event.inputs.vpc_cidr_block }}" \
+          -var="availability_zones=${{ github.event.inputs.availability_zones }}" \
+          -var="cluster_name=${{ github.event.inputs.cluster_name }}" \
+          -var="node_group_name=${{ github.event.inputs.node_group_name }}" \
+          -var="node_group_size=${{ github.event.inputs.node_group_size }}" \
+          -var="instance_types=${{ github.event.inputs.instance_types }}"
+    - name: Terraform Destroy
+      run: |
+        terraform destroy -auto-approve \
+          -var="vpc_cidr_block=${{ github.event.inputs.vpc_cidr_block }}" \
+          -var="availability_zones=${{ github.event.inputs.availability_zones }}" \
+          -var="cluster_name=${{ github.event.inputs.cluster_name }}" \
+          -var="node_group_name=${{ github.event.inputs.node_group_name }}" \
+          -var="node_group_size=${{ github.event.inputs.node_group_size }}" \
+          -var="instance_types=${{ github.event.inputs.instance_types }}"
