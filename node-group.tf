@@ -1,16 +1,16 @@
 resource "aws_eks_node_group" "eks_nodes" {
   cluster_name    = aws_eks_cluster.eks_cluster.name
-  node_group_name = "demo-node-group"
+  node_group_name = var.node_group_name
   node_role_arn   = aws_iam_role.eks_node_role.arn
   subnet_ids      = aws_subnet.eks_subnet[*].id
 
   scaling_config {
-    desired_size = 3
-    max_size     = 3
-    min_size     = 3
+    desired_size = var.node_group_size
+    max_size     = var.node_group_size
+    min_size     = var.node_group_size
   }
 
-  instance_types = ["t3.medium"]
+  instance_types = var.instance_types
 }
 
 resource "aws_iam_role" "eks_node_role" {
