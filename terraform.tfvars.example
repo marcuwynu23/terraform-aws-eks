@@ -1,0 +1,6 @@
+vpc_cidr_block     = "10.0.0.0/16"
+availability_zones = ["ap-southeast-1a", "ap-southeast-1b"]
+cluster_name       = "demo-eks-cluster"
+node_group_name    = "demo-node-group"
+node_group_size    = 3
+instance_types     = ["t3.medium"]
